@@ -1,3 +1,4 @@
+use colored::{ColoredString, Colorize};
 use reqwest::Error;
 use serde::Deserialize;
 use std::env;
@@ -47,15 +48,21 @@ async fn main() -> Result<(), Error> {
     let weather_data: ZipResponse = response.json().await?;
 
     //    println!("{:?}", weather_data);
-    println!("\tConditions for zipcode: {zip_code}");
-    println!("\tDescription:\t\t{}", &weather_data.weather[0].description);
     println!(
-        "\tCurrent Temperature:\t{:.2}",
-        convert_k_to_f(weather_data.main.temp)
+        "\n\tConditions for zipcode: {}",
+        zip_code.to_string().green()
+    );
+
+    let conditions = &weather_data.weather[0].description;
+
+    println!("\tDescription:\t\t{}", colorize_conditions(&conditions));
+    println!(
+        "\tCurrent Temperature:\t{}",
+        colorize_temperature(&convert_k_to_f(weather_data.main.temp))
     );
     println!(
-        "\tCurrent Feels Like:\t{:.2}",
-        convert_k_to_f(weather_data.main.feels_like)
+        "\tCurrent Feels Like:\t{}",
+        colorize_temperature(&convert_k_to_f(weather_data.main.feels_like))
     );
     println!("\tCurrent Humidity:\t{}%", &weather_data.main.humidity);
     println!(
@@ -68,4 +75,34 @@ async fn main() -> Result<(), Error> {
 
 fn convert_k_to_f(temperature: f32) -> f32 {
     (temperature - 273.15) * (9.0 / 5.0) + 32.0
+}
+
+fn colorize_temperature(temperature: &f32) -> ColoredString {
+    let formatted_temperature = format!("{:.2}", temperature);
+
+    if temperature >= &100.0 {
+        formatted_temperature.red()
+    } else if temperature >= &85.0 {
+        formatted_temperature.bright_red()
+    } else if temperature >= &70.0 {
+        formatted_temperature.truecolor(255, 128, 0)
+    } else if temperature >= &55.0 {
+        formatted_temperature.bright_green()
+    } else if temperature >= &40.0 {
+        formatted_temperature.cyan()
+    } else if temperature >= &0.0 {
+        formatted_temperature.blue()
+    } else if temperature < &0.0 {
+        formatted_temperature.bright_blue()
+    } else {
+        formatted_temperature.normal()
+    }
+}
+
+fn colorize_conditions(conditions: &String) -> ColoredString {
+    if conditions == "clear sky" {
+        conditions.bright_cyan()
+    } else {
+        conditions.normal()
+    }
 }
